@@ -67,7 +67,18 @@ class FaceDetectionModel:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        raise NotImplementedError
+        image_final = self.preprocess_input(image)
+        outputs = self.exec_network.infer({self.input_name:image_final})
+        face_coord = self.preprocess_output(outputs, image)
+
+        if len(face_coord) == 0:
+            return 0,0
+        first_face_coord = face_coord[0]
+        cropped_face = image[first_face_coord[1]:first_face_coord[3],
+                        first_face_coord[0]:first_face_coord[2]]
+
+        return first_face_coord, cropped_face        
+
 
     def check_model(self):
         pass
