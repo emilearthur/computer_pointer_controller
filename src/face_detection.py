@@ -17,7 +17,7 @@ class FaceDetectionModel:
     '''
     def __init__(self, model_name, threshold, device='CPU',extensions=None):
         '''
-        TODO: Use this to set your instance variables.
+        DONE: Use this to set your instance variables.
         '''
         self.model_name = model_name 
         self.device = device 
@@ -37,7 +37,7 @@ class FaceDetectionModel:
 
     def load_model(self):
         '''
-        TODO: You will need to complete this method.
+        DONE: You will need to complete this method.
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
@@ -64,7 +64,7 @@ class FaceDetectionModel:
 
     def predict(self, image):
         '''
-        TODO: You will need to complete this method.
+        DONE: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
         image_final = self.preprocess_input(image)
