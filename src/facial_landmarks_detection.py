@@ -2,8 +2,15 @@
 This is a sample class for a model. You may choose to use it as-is or make any changes to it.
 This has been provided just to give you an idea of how to structure your model class.
 '''
+import cv2 
+import os 
+import sys 
+import logging as log 
+import math 
+import numpy as np 
+from openvino.inference_engine import IECore 
 
-class Model_X:
+class FaceLandmarksModel:
     '''
     Class for the Face Detection Model.
     '''

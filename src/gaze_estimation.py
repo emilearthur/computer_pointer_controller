@@ -11,7 +11,7 @@ import math
 import numpy as np 
 from openvino.inference_engine import IECore 
 
-class GazeEstimation:
+class GazeEstimationModel:
     '''
     Class for the Face Detection Model.
     '''
