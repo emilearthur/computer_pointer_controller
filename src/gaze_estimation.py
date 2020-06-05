@@ -61,7 +61,7 @@ class GazeEstimation:
         
 
         self.exec_network = self.core.load_network(network=self.network, device_name=self.device, num_requests=1) 
-        
+
         self.input_name = [i for i in self.network.inputs.keys()]
         self.input_shape = self.network.inputs[self.input_name[1]].shape
         self.output_names = [i for i in self.network.outputs.keys()]
@@ -79,6 +79,8 @@ class GazeEstimation:
                                             'head_pose_angles':hpa})
         
         mouse_coordinate, gaze_vector = self.preprocess_output(outputs, hpa)
+
+        return mouse_coordinate, gaze_vector
 
 
     def check_model(self):
