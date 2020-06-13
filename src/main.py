@@ -173,4 +173,6 @@ def main():
     cv2.destroyAllWindows() 
     inputFeeder.close()
 
+if __name__ == '__main__':
+    main()
 
