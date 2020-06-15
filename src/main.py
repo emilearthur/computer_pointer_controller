@@ -24,7 +24,7 @@ def build_argparser():
     parser = ArgumentParser() 
 
     parser.add_argument("-fd", "--face_dectection_model", required=True, type=str, help="Path to a face detection model xml file with a trained model.")
-    parser.add_argument("-fl", "--face_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model xml file with a trained model.")
+    parser.add_argument("-fl", "--facial_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model xml file with a trained model.")
     parser.add_argument("-hp", "--head_pose_model", required=True, type=str, help="Path to a head pose model xml file with a trained model.")
     parser.add_argument("-ge", "--gaze_estimation_model", required=True, type=str,
                         help="Path to a gaze estimation model xml file with a trained model.")
@@ -62,7 +62,7 @@ def main():
             exit(1)
         inputFeeder = InputFeeder("video", inputFilePath)
     
-    modelPath = {'FaceDetectionModel':args.face_detection_model,
+    modelPath = {'FaceDetectionModel':args.face_dectection_model,
                 'FacialLandmarksModel': args.facial_landmarks_model, 
                 'HeadPoseEstimationModel':args.head_pose_model, 
                 'GazeEstimationModel': args.gaze_estimation_model}
