@@ -3,9 +3,9 @@ This is a sample class for a model. You may choose to use it as-is or make any c
 This has been provided just to give you an idea of how to structure your model class.
 '''
 import cv2 
-from model import Model  
+from model import Model 
 
-class HeadPoseEstimationModel(Model):
+class FaceDetectionModel(Model):
     '''
     Class for the Face Detection Model.
     '''
@@ -13,7 +13,7 @@ class HeadPoseEstimationModel(Model):
         '''
         DONE: Use this to set your instance variables.
         '''
-        super(HeadPoseEstimationModel, self).__init__(model_name, threshold, device, extensions)
+        super(FaceDetectionModel, self).__init__(model_name, threshold, device, extensions)
 
 
     def predict(self, image):
@@ -23,15 +23,21 @@ class HeadPoseEstimationModel(Model):
         '''
         image_final = self.preprocess_input(image)
         outputs = self.exec_network.infer({self.input_name:image_final})
-        outputs_final = self.preprocess_output(outputs)
+        face_coord = self.preprocess_output(outputs, image)
 
-        return outputs_final
+        if len(face_coord) == 0:
+            return 0,0
+        first_face_coord = face_coord[0]
+        cropped_face = image[first_face_coord[1]:first_face_coord[3],
+                        first_face_coord[0]:first_face_coord[2]]
+
+        return first_face_coord, cropped_face        
 
 
     def check_model(self):
         pass
-        
-        
+
+
     def preprocess_input(self, image):
         '''
         Before feeding the data into the model for inference,
@@ -42,16 +48,26 @@ class HeadPoseEstimationModel(Model):
         image_final = image_final.reshape(1,*image_final.shape) 
 
         return image_final
-        
-        
-    def preprocess_output(self, outputs):
+
+
+    def preprocess_output(self, outputs, image):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
         '''
-        outs = [] 
-        outs.append(outputs['angle_y_fc'].tolist()[0][0])
-        outs.append(outputs['angle_p_fc'].tolist()[0][0])
-        outs.append(outputs['angle_r_fc'].tolist()[0][0])
+        h = image.shape[0]
+        w = image.shape[1]
 
-        return outs
+        face_coords = [] 
+        results = outputs[self.output_names][0][0] 
+        for face in results:
+            conf = face[2]
+            if conf >= self.threshold:
+                xmin = int(face[3] * w) 
+                ymin = int(face[4] * h) 
+                xmax = int(face[5] * w)
+                ymax = int(face[6] * h)
+                
+                face_coords.append([xmin, ymin,xmax, ymax])
+
+        return face_coords

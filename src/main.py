@@ -24,7 +24,7 @@ def build_argparser():
     parser = ArgumentParser() 
 
     parser.add_argument("-fd", "--face_dectection_model", required=True, type=str, help="Path to a face detection model xml file with a trained model.")
-    parser.add_argument("-fl", "--facial_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model xml file with a trained model.")
+    parser.add_argument("-fl", "--face_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model xml file with a trained model.")
     parser.add_argument("-hp", "--head_pose_model", required=True, type=str, help="Path to a head pose model xml file with a trained model.")
     parser.add_argument("-ge", "--gaze_estimation_model", required=True, type=str,
                         help="Path to a gaze estimation model xml file with a trained model.")
@@ -48,9 +48,10 @@ def build_argparser():
 def main():
     # get command line args 
     args = build_argparser().parse_args()
-    previewflags = args.previewFlags 
 
+    previewflags = args.previewFlags 
     logger = log.getLogger() 
+
     inputFilePath = args.input
     inputFeeder = None
     
@@ -63,7 +64,7 @@ def main():
         inputFeeder = InputFeeder("video", inputFilePath)
     
     modelPath = {'FaceDetectionModel':args.face_dectection_model,
-                'FacialLandmarksModel': args.facial_landmarks_model, 
+                'FacialLandmarksModel': args.face_landmarks_model, 
                 'HeadPoseEstimationModel':args.head_pose_model, 
                 'GazeEstimationModel': args.gaze_estimation_model}
     
@@ -72,8 +73,8 @@ def main():
             logger.error("Unable to find specific 'key' xml file")
             exit(1) 
 
-    fdm = FaceDetectionModel(model_name = modelPath['FaceDetectionModel'], device = args.device, 
-                            threshold = args.prob_threshold, extensions = args.cpu_extension)
+    fdm = FaceDetectionModel(model_name = modelPath['FaceDetectionModel'], device = args.device,
+                                            extensions = args.cpu_extension,threshold = args.prob_threshold)
     fldm = FacialLandmarksModel(model_name = modelPath['FacialLandmarksModel'], device = args.device, 
                                 extensions = args.cpu_extension)
     gem = GazeEstimationModel(model_name = modelPath['GazeEstimationModel'], device = args.device, 
@@ -82,6 +83,10 @@ def main():
                                 extensions = args.cpu_extension)
 
     mc = MouseController("medium","fast") 
+
+
+    # load input feeder 
+    inputFeeder.load_data()
 
     # laod models and time taken to load models 
     data_capture = {}
@@ -96,15 +101,10 @@ def main():
     gem.load_model()
     gem_load_time = time.time()
 
-    data_capture['FaceDetectionModel_time'] = fdm_load_time
-    data_capture['FacialLandmarksModel'] = fldm_load_time
-    data_capture['HeadPoseEstimationModel'] = hpem_load_time
-    data_capture['GazeEstimationModel'] = gem_load_time
-
-
-    
-    # load input feeder 
-    inputFeeder.load_data()
+    data_capture['FaceDetectionModel_time'] = round((fdm_load_time - start_time),1)
+    data_capture['FacialLandmarksModel'] = round((fldm_load_time -fdm_load_time),1)
+    data_capture['HeadPoseEstimationModel'] = round((hpem_load_time - fldm_load_time),1)
+    data_capture['GazeEstimationModel'] = round((gem_load_time - hpem_load_time),1)
 
     counter = 0 
     start_infer_time = time.time() # time to start inference 
@@ -166,13 +166,13 @@ def main():
     infer_time = round((time.time() - start_infer_time),1)
     data_capture['Inference_time'] = infer_time
 
-    df = pd.DataFrame.from_dict(data_capture) 
+    df = pd.DataFrame.from_dict(data_capture,orient = 'index', columns=['time(secs)']) 
     df.to_csv("results.csv")
 
     logger.error("VideoStream Ended ...")
     cv2.destroyAllWindows() 
     inputFeeder.close()
 
+
 if __name__ == '__main__':
     main()
-
