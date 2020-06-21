@@ -1,0 +1,6 @@
+,time(secs)
+FaceDetectionModel_time,0.3
+FacialLandmarksModel,0.1
+HeadPoseEstimationModel,0.1
+GazeEstimationModel,0.1
+Inference_time,26.9
