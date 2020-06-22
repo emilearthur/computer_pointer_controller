@@ -4,17 +4,17 @@ This has been provided just to give you an idea of how to structure your model c
 '''
 import cv2 
 from model import Model  
-from openvino.inference_engine import IECore 
 
 class FaceDetectionModel(Model):
     '''
     Class for the Face Detection Model.
     '''
-    def __init__(self, model_name, threshold=0.6, device='CPU',extensions=None):
+    def __init__(self, model_name, threshold=0.6, extensions=None, device='CPU'):
+
         '''
         DONE: Use this to set your instance variables.
         '''
-        super(FaceDetectionModel, self).__init__(model_name, threshold, device, extensions)
+        super(FaceDetectionModel, self).__init__(model_name, threshold, extensions, device)
 
 
     def predict(self, image):

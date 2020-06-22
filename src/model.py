@@ -17,7 +17,7 @@ class Model:
     '''
     Class for the Face Detection Model.
     '''
-    def __init__(self, model_name, device='CPU',extensions=None, threshold):
+    def __init__(self, model_name, threshold, extensions=None, device='CPU'):
         '''
         DONE: Use this to set your instance variables.
         '''
@@ -50,13 +50,13 @@ class Model:
         not_supported_layers = [layers for layers in self.model.layers.keys() if layers not in supported_layers]
 
         if len(not_supported_layers) > 0 and self.device == 'CPU':
-            print("Unsupported layers found:{}".format(not_supported_layer))
+            print("Unsupported layers found:{}".format(not_supported_layers))
             if not self.extensions==None:
                 print("Adding CPU Extension")
                 self.core.add_extension(self.extensions, self.device) 
                 supported_layers  = self.core.query_network(network=self.model, device_name=self.device) 
                 not_supported_layers = [layers for layers in self.model.layers.keys() if layers not in supported_layers]
-                if len(not_supported_layer) > 0:
+                if len(not_supported_layers) > 0:
                     print("Unsupported layers found")
                     exit(1) 
             else:
