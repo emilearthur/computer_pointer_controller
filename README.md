@@ -144,7 +144,7 @@ Command Line Arguments for running the app
 ## Documentation
 `Pipeline`:  This project makes use of four pre-trained models provided by Intel's OpenVINO toolkits. The image below, shows the flow between then.
 
-![Pipeline](bin/pipline.png)
+![Pipeline](bin/pipeline.png)
 
 * [Face Detection](https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html)
  * [Head Position Estimation](https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html)
