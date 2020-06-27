@@ -140,7 +140,6 @@ Command Line Arguments for running the app
 * -d (optional): Specify the target device to infer the video file on the model. Devices supported include CPU, GPU, FPGA and MYRIAD.
 * -l (optional): Specify the absolute path of cpu extension.
 * -pt (optional): Specify the probability threshold for face detection model.
-* -flags (optional): Specify the flags from fd, fldm, hp and ge if you want to visualize the output of corresponding model of each frame. Note: Write flags with space seperation Example: --flags fd fld hp
 
 ## Documentation
 `Pipeline`:  This project makes use of four pre-trained models provided by Intel's OpenVINO toolkits. The image below, shows the flow between then.
