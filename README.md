@@ -3,7 +3,7 @@
 ## `Introduction`
 Computer Pointer Controller App is an application used to control the movement of mouse using the gaze estimation model.
 
-The gaze estimation model is used to estimate the gaze of the users's eye
+The gaze estimation model is used to estimate the gaze of the users's eyes and it's feed into the `pyautogui` module to change the mouse pointer position.
 
 ## Project Set Up and Installation
 Projcet source structure is a show below.
