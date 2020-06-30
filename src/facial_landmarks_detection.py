@@ -38,9 +38,10 @@ class FacialLandmarksModel(Model):
         left_eye = image[le_ymin:le_ymax, le_xmin:le_xmax]
         right_eye = image[re_ymin:re_ymax, re_xmin:re_xmax]
 
-        eye_coords = [[le_xmin, le_ymin,le_xmax, le_ymax],
-                        [re_xmin, re_ymin, re_xmax, re_ymax]]
+        #eye_coords = [[le_xmin, le_ymin,le_xmax, le_ymax],
+        #                [re_xmin, re_ymin, re_xmax, re_ymax]]
         
+        eye_coords = (output['left_eye_x'], output['left_eye_y'], output['right_eye_x'], output['right_eye_y'])
         return left_eye, right_eye, eye_coords
 
 

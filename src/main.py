@@ -15,6 +15,98 @@ from mouse_controller import MouseController
 from argparse import ArgumentParser 
 from input_feeder import InputFeeder 
 
+def output_boxes(image, point_one, point_two, color=(0,255,0)): # head dectection flag
+	cv2.rectangle(image, point_one, point_two, color, 1)
+
+def output_text(image, text, org):
+	color=(255,255,0)
+	cv2.putText(image,text, org, 0, 0.8,color)
+
+
+def bound_boxes(image, eye_coord, height, width, x0, y0):
+    color=(255,255,0)
+
+    ex1, ey1, ex2, ey2 = eye_coord
+
+    x1, x2 = ex1-int(width/2), ex1+int(width/2)
+    y1, y2 = ey1-int(height/2 + 1), ey1+int(height/2 + 1)
+
+
+
+    point_one = (x0+x1, y0+y1)
+    point_two = (x0+x2, y0+y2)
+
+    output_boxes(image, point_one, point_two,color)
+
+
+
+
+
+# code source: https://knowledge.udacity.com/questions/171017
+def draw_axes(frame, center_of_face, yaw, pitch, roll, scale = 50, focal_length=950):
+    yaw *= np.pi / 180.0
+    pitch *= np.pi / 180.0
+    roll *= np.pi / 180.0
+    cx = int(center_of_face[0])
+    cy = int(center_of_face[1])
+    r_x = np.array([[1, 0, 0],
+                    [0, math.cos(pitch), -math.sin(pitch)],
+                    [0, math.sin(pitch), math.cos(pitch)]])
+    r_y = np.array([[math.cos(yaw), 0, -math.sin(yaw)],
+                    [0, 1, 0],
+                    [math.sin(yaw), 0, math.cos(yaw)]])
+    r_z = np.array([[math.cos(roll), -math.sin(roll), 0],
+                    [math.sin(roll), math.cos(roll), 0],
+                    [0, 0, 1]])
+
+    r = r_z @ r_y @ r_x
+
+    # source and reference https://www.learnopencv.com/rotation-matrix-to-euler-angles/
+    camera_matrix = build_camera_matrix(center_of_face, focal_length)
+    xaxis = np.array(([1 * scale, 0, 0]), dtype='float32').reshape(3, 1)
+    yaxis = np.array(([0, -1 * scale, 0]), dtype='float32').reshape(3, 1)
+    zaxis = np.array(([0, 0, -1 * scale]), dtype='float32').reshape(3, 1)
+    zaxis1 = np.array(([0, 0, 1 * scale]), dtype='float32').reshape(3, 1)
+    o = np.array(([0, 0, 0]), dtype='float32').reshape(3, 1)
+    o[2] = camera_matrix[0][0]
+    xaxis = np.dot(r, xaxis) + o
+    yaxis = np.dot(r, yaxis) + o
+    zaxis = np.dot(r, zaxis) + o
+    zaxis1 = np.dot(r, zaxis1) + o
+    xp2 = (xaxis[0] / xaxis[2] * camera_matrix[0][0]) + cx
+    yp2 = (xaxis[1] / xaxis[2] * camera_matrix[1][1]) + cy
+    p2 = (int(xp2), int(yp2))
+    cv2.line(frame, (cx, cy), p2, (0, 0, 255), 2)
+    xp2 = (yaxis[0] / yaxis[2] * camera_matrix[0][0]) + cx
+    yp2 = (yaxis[1] / yaxis[2] * camera_matrix[1][1]) + cy
+    p2 = (int(xp2), int(yp2))
+    cv2.line(frame, (cx, cy), p2, (0, 255, 0), 2)
+    xp1 = (zaxis1[0] / zaxis1[2] * camera_matrix[0][0]) + cx
+    yp1 = (zaxis1[1] / zaxis1[2] * camera_matrix[1][1]) + cy
+    p1 = (int(xp1), int(yp1))
+    xp2 = (zaxis[0] / zaxis[2] * camera_matrix[0][0]) + cx
+    yp2 = (zaxis[1] / zaxis[2] * camera_matrix[1][1]) + cy
+    p2 = (int(xp2), int(yp2))
+    cv2.line(frame, p1, p2, (255, 0, 0), 2)
+    cv2.circle(frame, p2, 3, (255, 0, 0), 2)
+    return frame
+
+
+def build_camera_matrix(center_of_face, focal_length):
+    cx = int(center_of_face[0])
+    cy = int(center_of_face[1])
+    camera_matrix = np.zeros((3, 3), dtype='float32')
+    camera_matrix[0][0] = focal_length
+    camera_matrix[0][2] = cx
+    camera_matrix[1][1] = focal_length
+    camera_matrix[1][2] = cy
+    camera_matrix[2][2] = 1
+    return camera_matrix
+
+
+
+
+
 def build_argparser():
     """
     Parse commandline arguments 
@@ -23,24 +115,19 @@ def build_argparser():
     """
     parser = ArgumentParser() 
 
-    parser.add_argument("-fd", "--face_dectection_model", required=True, type=str, help="Path to a face detection model xml file with a trained model.")
-    parser.add_argument("-fl", "--face_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model xml file with a trained model.")
-    parser.add_argument("-hp", "--head_pose_model", required=True, type=str, help="Path to a head pose model xml file with a trained model.")
-    parser.add_argument("-ge", "--gaze_estimation_model", required=True, type=str,
-                        help="Path to a gaze estimation model xml file with a trained model.")
-    parser.add_argument("-i", "--input", required=True, type=str, help="Path to image or video file or CAM")
-    parser.add_argument("-l", "--cpu_extension", required=False, type=str,default=None, 
-                        help="MKLDNN (CPU)-targeted custom layers."
-                             "Absolute path to a shared library with the"
-                             "kernels impl.")
-    parser.add_argument("-d","--device", type=str, default="CPU", help="Specify the target device to infer on:")
-    parser.add_argument("-pt", "--prob_threshold", type=float,default=0.6, help="Probability threshold for accurate detection (0.6 by default)")
-    parser.add_argument("-flags", "--previewFlags", required=False, nargs='+', default=[],
-                        help="Specify the flags from fd, fld, hp, ge like --flafs fd fl ge (seperate each flag by space)"
-                        "for see the visualization of different model outputs of each frame,"
-                        "fd for Face Detection Model, fl for Facial Landmark Detection model"
-                        "hp for Head Pose Estimation Model and ge for Gaze Estimation Model")
-    
+    parser.add_argument("-fd","--face_dectection_model", required=True, type=str, help="Path to a face detection model.")
+    parser.add_argument("-fl","--face_landmarks_model", required=True, type=str, help="Path to a facial landmarks detection model.")
+    parser.add_argument("-hp","--head_pose_model", required=True, type=str, help="Path to a head pose model.")
+    parser.add_argument("-ge","--gaze_estimation_model", required=True, type=str,
+                        help="Path to a gaze estimation model.")
+    parser.add_argument("-i","--input", required=True, type=str, help="Path to image or video file or CAM")
+    parser.add_argument("-e","--cpu_extension", required=False, type=str,default=None, 
+                        help="absolute path of cpu extension.")
+    parser.add_argument("-d","--device", default="CPU", type=str, help="Device to run inference on")
+    parser.add_argument("-pt", "--prob_threshold", default=0.6, type=float,  help="Probability threshold for accurate detection (0.6 by default)")
+    parser.add_argument("-outputflag", "--preview",default=False,action="store_true",help="Displays output of imtermediate models")
+
+
     return parser
 
 
@@ -49,46 +136,27 @@ def main():
     # get command line args 
     args = build_argparser().parse_args()
 
-    previewflags = args.previewFlags 
     logger = log.getLogger() 
 
-    inputFilePath = args.input
-    inputFeeder = None
-    
-    if inputFilePath.lower() == "cam":
-        inputFeeder = InputFeeder("cam") 
-    else:
-        if not os.path.isfile(inputFilePath):
-            logger.error("Unable to find specified video file") 
-            exit(1)
-        inputFeeder = InputFeeder("video", inputFilePath)
-    
-    modelPath = {'FaceDetectionModel':args.face_dectection_model,
-                'FacialLandmarksModel': args.face_landmarks_model, 
-                'HeadPoseEstimationModel':args.head_pose_model, 
-                'GazeEstimationModel': args.gaze_estimation_model}
-    
-    for key in modelPath.keys():
-        if not os.path.isfile(modelPath[key]):
-            logger.error("Unable to find specific 'key' xml file")
-            exit(1) 
+    type_input = args.input
 
-    fdm = FaceDetectionModel(model_name = modelPath['FaceDetectionModel'], device = args.device,
-                                            extensions = args.cpu_extension,threshold = args.prob_threshold)
-    fldm = FacialLandmarksModel(model_name = modelPath['FacialLandmarksModel'], device = args.device, 
-                                extensions = args.cpu_extension)
-    gem = GazeEstimationModel(model_name = modelPath['GazeEstimationModel'], device = args.device, 
-                            extensions = args.cpu_extension)
-    hpem = HeadPoseEstimationModel(model_name = modelPath['HeadPoseEstimationModel'], device=args.device, 
-                                extensions = args.cpu_extension)
+    if type_input == "CAM":
+        inputFeeder = InputFeeder("cam")
+    else: 
+        inputFeeder = InputFeeder("video", args.input)
+
+    inputFeeder.load_data()
 
     mc = MouseController("medium","fast") 
 
-
-    # load input feeder 
-    inputFeeder.load_data()
-
-    # laod models and time taken to load models 
+    fdm = FaceDetectionModel(model_name = args.face_dectection_model, device = args.device,
+                                            extensions = args.cpu_extension,threshold = args.prob_threshold)
+    fldm = FacialLandmarksModel(model_name = args.face_landmarks_model, device = args.device, 
+                                extensions = args.cpu_extension)
+    gem = GazeEstimationModel(model_name = args.gaze_estimation_model, device = args.device, 
+                            extensions = args.cpu_extension)
+    hpem = HeadPoseEstimationModel(model_name = args.head_pose_model, device=args.device, 
+                                extensions = args.cpu_extension)
     data_capture = {}
 
     start_time = time.time()
@@ -101,75 +169,79 @@ def main():
     gem.load_model()
     gem_load_time = time.time()
 
-    data_capture['FaceDetectionModel_time'] = round((fdm_load_time - start_time),1)
-    data_capture['FacialLandmarksModel'] = round((fldm_load_time -fdm_load_time),1)
-    data_capture['HeadPoseEstimationModel'] = round((hpem_load_time - fldm_load_time),1)
-    data_capture['GazeEstimationModel'] = round((gem_load_time - hpem_load_time),1)
-
-    counter = 0 
-    start_infer_time = time.time() # time to start inference 
-    for ret, frame in inputFeeder.next_batch():
-        if not ret:
+    data_capture['FaceDetectionModel_loadtime'] = round((fdm_load_time - start_time)*1000,3)
+    data_capture['FacialLandmarksModel_loadtime'] = round((fldm_load_time -fdm_load_time)*1000,3)
+    data_capture['HeadPoseEstimationModel_loadtime'] = round((hpem_load_time - fldm_load_time)*1000,3)
+    data_capture['GazeEstimationModel_loadtime'] = round((gem_load_time - hpem_load_time)*1000,3)
+    
+    for flag, frame in inputFeeder.next_batch():
+        if not flag:
             break 
-        counter+=1 
-        if counter%5==0:
-            cv2.imshow('video', cv2.resize(frame,(500,500))) 
 
         pressedKey = cv2.waitKey(60)
-        face_coords, cropped_face = fdm.predict(frame.copy())
+
+        start_infer_time = time.time() # time to start inference 
+        face_coords, face_img = fdm.predict(frame) 
+        fdm_infertime = time.time()
+
+        if face_coords == 0: # if face not detected
+            continue
+
+        hpem_out = hpem.predict(face_img)
+        hpem_infertime = time.time()
+
+        left_eye, right_eye, eye_coord = fldm.predict(face_img)
+        fldm_infertime = time.time()
         
-        if type(cropped_face) == int:
-            logger.error("Unable to detect the face.")
-            if key==27:
-                break 
-            continue 
-        
-        hpem_out = hpem.predict(cropped_face.copy())
-        
-        left_eye, right_eye, eye_coord = fldm.predict(cropped_face.copy())
+        if left_eye.all() == 0 or  right_eye.all()==0: # if eye are not detected
+            continue
+
 
         mouse_coord, gaze_vector = gem.predict(left_eye, right_eye, hpem_out) 
+        gem_infertime = time.time()
 
-        if len(previewflags) != 0:
-            preview_frame = frame.copy() 
-            if 'fd' in previewflags:
-                preview_frame = cropped_face
-            if 'fld' in previewflags: 
-                cv2.rectangle(cropped_face, (eye_coord[0][0]-10, eye_coord[0][1]-10), (eye_coord[0][2]+10, eye_coord[0][3]+10),
-                            (0,255,0),3)
-                cv2.rectangle(cropped_face, (eye_coord[1][0]-10, eye_coord[1][1]-10), (eye_coord[1][2]+10, eye_coord[1][3]+10),
-                            (0,255,0),3)
-            if 'hp' in previewflags:
-                cv2.putText(preview_frame, "Pose Angles: yaw:{:.2f} | pitch:{:.2f} | roll:{:.2f}".format(hpem_out[0],
-                                                                                                        hpem_out[1],
-                                                                                                        hpem_out[2]),
-                                                                                                        (10,20),
-                                                                                                        cv2.FONT_HERSHEY_COMPLEX,
-                                                                                                        0.25, (0,255,0), 1)
-            if 'ge' in previewflags:
-                x,y,w = int(gaze_vector[0]* 12), int(gaze_vector[1]*12), 160
-                le = cv2.line(left_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255),2)
-                cv2.line(le, (x-w, y+w), (x+w, y-w), (255,0,255), 2) 
-                re = cv2.line(right_eye.copy(), (x-w, y-w), (x+w, y+w), (255,0,255),2)
-                cv2.line(re, (x-w, y+w), (x+w, y-w), (255,0,255), 2) 
 
-                cropped_face[eye_coord[0][1]:eye_coord[0][3], eye_coord[0][0]:eye_coord[0][2]] = le
-                cropped_face[eye_coord[1][1]:eye_coord[1][3], eye_coord[1][0]:eye_coord[1][2]] = re
+        if args.preview:
+            output_boxes(frame, (face_coords[0],face_coords[1]),(face_coords[2],face_coords[3]))
 
-            cv2.imshow("Visualization", cv2.resize(preview_frame,(500,500)))
-        
-        if counter%5 == 0:
-            mc.move(mouse_coord[0], mouse_coord[1])
-        if key == 27:
+
+            bound_boxes(frame, eye_coord, 45, 25, face_coords[0], face_coords[1])
+
+
+            text = "Yaw: {:.2f}, Pitch: {:+.2f}, Roll: {:.2f}".format(hpem_out[0],hpem_out[1], hpem_out[2])
+
+            output_text(frame, text,(100,100))
+
+            h=frame.shape[0]
+            w=frame.shape[1]
+
+            center_of_face = (h/2, w/2,0) 
+
+            draw_axes(frame, center_of_face, hpem_out[0], hpem_out[1], hpem_out[2], scale = 50, focal_length=950)
+
+            cv2.imshow('video', cv2.resize(frame,(500,500))) 
+
+
+        cv2.imshow('video', cv2.resize(frame,(500,500))) 
+        mc.move(mouse_coord[0], mouse_coord[1])
+
+        if pressedKey == 27:
             break 
 
-    infer_time = round((time.time() - start_infer_time),1)
-    data_capture['Inference_time'] = infer_time
 
-    df = pd.DataFrame.from_dict(data_capture,orient = 'index', columns=['time(secs)']) 
+
+    data_capture['FaceDetectionModel_Inferencetime'] = round((fdm_infertime - start_infer_time)*1000,3)
+    data_capture['HeadPoseEstimationModel_Inferencetime'] = round((hpem_infertime - fdm_infertime)*1000,3)
+    data_capture['FacialLandmarksModel_Inferencetime'] = round((fldm_infertime - hpem_infertime)*1000,3)
+    data_capture['GazeEstimationModel_Inferencetime'] = round((gem_infertime - fldm_infertime)*1000,3)
+
+    total_time = round((time.time() - start_infer_time)*1000,3)
+    data_capture['Total_time'] = total_time
+
+    df = pd.DataFrame.from_dict(data_capture,orient = 'index', columns=['time(msecs)']) 
     df.to_csv("results.csv")
 
-    logger.error("VideoStream Ended ...")
+    logger.error("Video has ended...")
     cv2.destroyAllWindows() 
     inputFeeder.close()
 

@@ -29,10 +29,10 @@ class FaceDetectionModel(Model):
         if len(face_coord) == 0:
             return 0,0
         first_face_coord = face_coord[0]
-        cropped_face = image[first_face_coord[1]:first_face_coord[3],
+        cropped_face_img = image[first_face_coord[1]:first_face_coord[3],
                         first_face_coord[0]:first_face_coord[2]]
 
-        return first_face_coord, cropped_face        
+        return first_face_coord, cropped_face_img       
 
 
     def check_model(self):
